@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+NAME=authtoday
+DIST=image.tar
+
+build() {
+	docker build -t $NAME .
+	docker save -o $DIST $NAME
+}
