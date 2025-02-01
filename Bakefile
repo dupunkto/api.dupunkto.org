@@ -4,6 +4,7 @@ NAME=authtoday
 DIST=image.tar
 
 build() {
+	rm -rf $DIST
 	docker build -t $NAME .
 	docker save -o $DIST $NAME
 }
