@@ -8,3 +8,7 @@ build() {
 	docker build -t $NAME .
 	docker save -o $DIST $NAME
 }
+
+serve() {
+	bun run ./index.ts
+}
