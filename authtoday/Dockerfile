@@ -4,7 +4,7 @@ COPY package.json ./
 COPY bun.lockb ./
 COPY index.ts ./
 
-RUN bun install --frozen-lockfile --production
+RUN bun install --frozen-lockfile --production --verbose
 
 ENV NODE_ENV=production
 
