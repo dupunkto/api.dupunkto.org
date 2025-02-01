@@ -29,7 +29,7 @@ function sha256sum(buffer: Buffer | string): Buffer {
 }
 
 const server = Bun.serve({
-  port: 4000,
+  port: 4001,
   async fetch(req) {
     if (req.method !== "POST") {
       return new Response("Method not supported.", { status: 405 });
