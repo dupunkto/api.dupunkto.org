@@ -10,5 +10,5 @@ build() {
 }
 
 serve() {
-	bun run ./index.ts
+	bun run --hot ./index.ts
 }
