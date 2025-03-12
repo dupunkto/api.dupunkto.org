@@ -66,7 +66,6 @@ const server = Bun.serve({
     let code: string | null = null;
     let processed = false;
     let attempt = 0;
-    let failed = false;
 
     await page.on("request", (request) => {
       if (DEBUG && request.isNavigationRequest()) {
@@ -86,31 +85,26 @@ const server = Bun.serve({
     const url = `${ENDPOINT}/authorize?${params.toString()}`;
     await page.goto(url);
 
-    const submit = async () => {
-      return await Promise.all([
-        page.waitForNavigation(),
-        page.click("a[type='submit']"),
-      ]);
-    };
-
     await page.waitForSelector("#usernameField");
     await page.type("#usernameField", username);
-    await submit();
+    
+    await Promise.all([
+      page.waitForNavigation(),
+      page.click("a[type='submit']"),
+    ]);
 
     await page.waitForSelector("#password-field");
     await page.type("#password-field", password);
     await page.click("a[type='submit']");
 
-    while (!processed && !failed) {
+    while (!processed) {
       await Bun.sleep(1000);
 
       if (await page.$("#password-field")) {
-        if (attempt > MAX_ATTEMPTS) break;
+        if (attempt >= MAX_ATTEMPTS) break;
         else attempt++;
 
-        process.stdout.write(
-          `Entering password again... (attempt ${attempt})\n`
-        );
+        process.stdout.write(`Entering password again... (attempt ${attempt})\n`);
 
         await page.type("#password-field", password);
         await page.click("a[type='submit']");
