@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import puppeteer from "puppeteer";
 
 const RANDOM_BYTES = 32;
-const CLIENT_ID = "D50E0C06-32D1-4B41-A137-A9A850C892C2";
+const CLIENT_ID = "somtoday-leerling-native";
 const SCOPE = "openid";
 const APP = "somtoday://nl.topicus.somtoday.leerling";
 const ENDPOINT = "https://inloggen.somtoday.nl/oauth2";
@@ -54,7 +54,7 @@ const server = Bun.serve({
       code_challenge: code_challenge,
       code_challenge_method: "S256",
       state: STATE,
-      session: "no_session"
+      session: "dont_remember_me"
     });
 
     const browser = await puppeteer.launch();
