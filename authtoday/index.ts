@@ -6,9 +6,9 @@ import puppeteer from "puppeteer";
 const RANDOM_BYTES = 32;
 const CLIENT_ID = "D50E0C06-32D1-4B41-A137-A9A850C892C2";
 const SCOPE = "openid";
-const APP = "somtodayleerling";
+const APP = "somtoday://nl.topicus.somtoday.leerling";
 const ENDPOINT = "https://inloggen.somtoday.nl/oauth2";
-const REDIRECT_URI = `${APP}://oauth/callback`;
+const REDIRECT_URI = `${APP}/oauth/callback`;
 const STATE = "boobswow";
 
 interface Params {
