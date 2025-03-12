@@ -3,6 +3,8 @@
 import crypto from "node:crypto";
 import puppeteer from "puppeteer";
 
+const DEBUG = false;
+const MAX_ATTEMPTS = 5;
 const RANDOM_BYTES = 32;
 const CLIENT_ID = "somtoday-leerling-native";
 const SCOPE = "openid";
@@ -12,16 +14,17 @@ const REDIRECT_URI = `${APP}/oauth/callback`;
 const STATE = "boobswow";
 
 interface Params {
-  tenant_id: string,
-  username: string,
-  password: string
+  tenant_id: string;
+  username: string;
+  password: string;
 }
 
 function base64_url_encode(buffer: Buffer): string {
-  return buffer.toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
+  return buffer
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
 }
 
 function sha256sum(buffer: Buffer | string): Buffer {
@@ -54,14 +57,22 @@ const server = Bun.serve({
       code_challenge: code_challenge,
       code_challenge_method: "S256",
       state: STATE,
-      session: "dont_remember_me"
+      session: "dont_remember_me",
     });
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: !DEBUG });
     const page = await browser.newPage();
 
     let code: string | null = null;
     let processed = false;
+    let attempt = 0;
+    let failed = false;
+
+    await page.on("request", (request) => {
+      if (DEBUG && request.isNavigationRequest()) {
+        process.stdout.write(`Visiting ${request.url()}\n`);
+      }
+    });
 
     await page.on("response", (response) => {
       const location = response.headers()["location"];
@@ -73,21 +84,52 @@ const server = Bun.serve({
     });
 
     const url = `${ENDPOINT}/authorize?${params.toString()}`;
-
-    process.stdout.write(`Visiting ${url}`);
     await page.goto(url);
 
+    const submit = async () => {
+      return await Promise.all([
+        page.waitForNavigation(),
+        page.click("a[type='submit']"),
+      ]);
+    };
+
+    await page.waitForSelector("#usernameField");
     await page.type("#usernameField", username);
-    await page.click("a[type='submit']");
+    await submit();
+
+    await page.waitForSelector("#password-field");
     await page.type("#password-field", password);
     await page.click("a[type='submit']");
 
-    while (!processed) {
+    while (!processed && !failed) {
+      await Bun.sleep(1000);
+
+      if (await page.$("#password-field")) {
+        if (attempt > MAX_ATTEMPTS) break;
+        else attempt++;
+
+        process.stdout.write(
+          `Entering password again... (attempt ${attempt})\n`
+        );
+
+        await page.type("#password-field", password);
+        await page.click("a[type='submit']");
+
+        continue;
+      }
+
       await Bun.sleep(5000);
       process.stdout.write("Waiting for the code... (it's taking a while)\n");
     }
 
     await browser.close();
+
+    if (attempt > MAX_ATTEMPTS) {
+      return new Response(
+        "Maximum amount of retries exceeded; Somtoday is blocking us.",
+        { status: 500 }
+      );
+    }
 
     if (!code) {
       return new Response("Could not find 'code'. Sowwy!", { status: 500 });
@@ -102,10 +144,10 @@ const server = Bun.serve({
         client_id: CLIENT_ID,
         redirect_uri: REDIRECT_URI,
         scope: SCOPE,
-        session: "no_session"
-      })
+        session: "no_session",
+      }),
     });
-  }
+  },
 });
 
 console.log(`Listening on ${server.url}`);
